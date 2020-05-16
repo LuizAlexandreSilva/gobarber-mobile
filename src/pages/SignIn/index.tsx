@@ -29,6 +29,7 @@ import {
 } from './styles';
 
 import logoImg from '../../assets/logo.png';
+import { useAuth } from '../../hooks/auth';
 
 interface SignInFormData {
   email: string;
@@ -39,49 +40,45 @@ const SignIn: React.FC = () => {
   const navigation = useNavigation();
   const formRef = useRef<FormHandles>(null);
   const passwordInputRef = useRef<TextInput>(null);
+  const { signIn } = useAuth();
 
-  const handleSignIn = useCallback(async (data: SignInFormData) => {
-    try {
-      formRef.current?.setErrors({});
+  const handleSignIn = useCallback(
+    async (data: SignInFormData) => {
+      try {
+        formRef.current?.setErrors({});
 
-      const schema = Yup.object().shape({
-        email: Yup.string()
-          .required('Digite o e-mail')
-          .email('Digite um e-mail válido'),
-        password: Yup.string().required('Digite a senha'),
-      });
+        const schema = Yup.object().shape({
+          email: Yup.string()
+            .required('Digite o e-mail')
+            .email('Digite um e-mail válido'),
+          password: Yup.string().required('Digite a senha'),
+        });
 
-      await schema.validate(data, {
-        abortEarly: false,
-      });
+        await schema.validate(data, {
+          abortEarly: false,
+        });
 
-      // await signIn({
-      //   email: data.email,
-      //   password: data.password,
-      // });
+        await signIn({
+          email: data.email,
+          password: data.password,
+        });
+      } catch (err) {
+        if (err instanceof Yup.ValidationError) {
+          const errors = getValidationErrors(err);
 
-      // history.push('/dashboard');
-    } catch (err) {
-      if (err instanceof Yup.ValidationError) {
-        const errors = getValidationErrors(err);
+          formRef.current?.setErrors(errors);
 
-        formRef.current?.setErrors(errors);
+          return;
+        }
 
-        return;
+        Alert.alert(
+          'Erro na autenticação',
+          'Ocorreu um erro ao fazer login. Cheque as credenciais.',
+        );
       }
-
-      Alert.alert(
-        'Erro na autenticação',
-        'Ocorreu um erro ao fazer login. Cheque as credenciais.',
-      );
-
-      // addToast({
-      //   type: 'error',
-      //   title: 'Erro na autenticação',
-      //   description: '',
-      // });
-    }
-  }, []);
+    },
+    [signIn],
+  );
 
   return (
     <>
